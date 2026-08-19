@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L Detective</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Baloo+2:wght@600;700&display=swap');
+
+  :root{
+    --cream:#FBF6EC;
+    --ink:#22333B;
+    --gold:#E8A33D;
+    --gold-dark:#B87A22;
+    --terracotta:#C1592B;
+    --leaf:#3E8E5A;
+    --leaf-dark:#2A6B3F;
+    --softgray:#DCD5C6;
+    --card:#FFFFFF;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    background:var(--cream);
+    font-family:'Atkinson Hyperlegible', sans-serif;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    padding:24px 12px 48px;
+  }
+
+  .wrap{
+    width:100%;
+    max-width:520px;
+  }
+
+  header{
+    text-align:center;
+    margin-bottom:6px;
+  }
+
+  h1{
+    font-family:'Baloo 2', sans-serif;
+    font-size:2.1rem;
+    font-weight:700;
+    color:var(--terracotta);
+    margin:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+
+  .sub{
+    font-size:1rem;
+    color:var(--ink);
+    opacity:0.75;
+    margin:2px 0 18px;
+    text-align:center;
+  }
+
+  .level-track{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin-bottom:18px;
+  }
+
+  .level-dot{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    background:var(--softgray);
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:0.95rem;
+    border:2px solid transparent;
+  }
+
+  .level-dot.active{
+    background:var(--gold);
+    color:#fff;
+    border-color:var(--gold-dark);
+  }
+
+  .level-dot.done{
+    background:var(--leaf);
+    color:#fff;
+  }
+
+  .stage{
+    background:var(--card);
+    border-radius:20px;
+    padding:22px 18px 26px;
+    box-shadow:0 3px 0 var(--softgray);
+    position:relative;
+  }
+
+  .mascot-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:20px;
+  }
+
+  .mascot{
+    width:56px;
+    height:56px;
+    flex-shrink:0;
+  }
+
+  .bubble{
+    background:var(--cream);
+    border-radius:14px;
+    padding:10px 14px;
+    font-size:1rem;
+    font-weight:700;
+    line-height:1.3;
+    flex:1;
+    position:relative;
+  }
+
+  .bubble .twi{
+    display:block;
+    font-weight:400;
+    font-size:0.82rem;
+    color:var(--terracotta);
+    margin-top:2px;
+  }
+
+  .instruction{
+    text-align:center;
+    font-family:'Baloo 2', sans-serif;
+    font-weight:600;
+    font-size:1.05rem;
+    margin-bottom:16px;
+  }
+
+  .grid{
+    display:grid;
+    gap:12px;
+    justify-content:center;
+    margin-bottom:20px;
+  }
+
+  .tile{
+    width:64px;
+    height:64px;
+    border-radius:14px;
+    border:none;
+    background:var(--cream);
+    box-shadow:0 3px 0 var(--softgray);
+    font-family:'Atkinson Hyperlegible', sans-serif;
+    font-size:2rem;
+    font-weight:700;
+    color:var(--ink);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:transform 0.08s ease;
+    position:relative;
+  }
+
+  .tile:active{
+    transform:translateY(2px);
+    box-shadow:0 1px 0 var(--softgray);
+  }
+
+  .tile.found{
+    background:var(--leaf);
+    color:#fff;
+    box-shadow:0 3px 0 var(--leaf-dark);
+    cursor:default;
+  }
+
+  .tile.found::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:14px;
+    background:
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.18) 0 2px, transparent 2px 10px),
+      repeating-linear-gradient(-45deg, rgba(255,255,255,0.18) 0 2px, transparent 2px 10px);
+  }
+
+  .tile.shake{
+    animation:shake 0.35s ease;
+  }
+
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-4px);}
+    75%{transform:translateX(4px);}
+  }
+
+  .tile.disabled-correct{
+    animation:pop 0.3s ease;
+  }
+
+  @keyframes pop{
+    0%{transform:scale(1);}
+    40%{transform:scale(1.18);}
+    100%{transform:scale(1);}
+  }
+
+  .progress-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-weight:700;
+    font-size:0.95rem;
+  }
+
+  .stars{
+    font-size:1.1rem;
+    letter-spacing:2px;
+    color:var(--softgray);
+  }
+
+  .stars .lit{
+    color:var(--gold);
+  }
+
+  .complete-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(251,246,236,0.97);
+    border-radius:20px;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:20px;
+  }
+
+  .complete-overlay.show{
+    display:flex;
+  }
+
+  .complete-overlay h2{
+    font-family:'Baloo 2', sans-serif;
+    color:var(--leaf-dark);
+    font-size:1.6rem;
+    margin:0 0 6px;
+  }
+
+  .complete-overlay p{
+    margin:0 0 18px;
+    font-size:1rem;
+  }
+
+  .btn{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:600;
+    font-size:1.05rem;
+    background:var(--gold);
+    color:#fff;
+    border:none;
+    border-radius:14px;
+    padding:12px 26px;
+    box-shadow:0 3px 0 var(--gold-dark);
+    cursor:pointer;
+  }
+
+  .btn:active{
+    transform:translateY(2px);
+    box-shadow:0 1px 0 var(--gold-dark);
+  }
+
+  .restart-row{
+    text-align:center;
+    margin-top:16px;
+  }
+
+  .restart-row button{
+    background:none;
+    border:none;
+    color:var(--ink);
+    opacity:0.55;
+    font-family:'Atkinson Hyperlegible', sans-serif;
+    font-size:0.85rem;
+    text-decoration:underline;
+    cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span>🔎</span> L Detective</h1>
+    <p class="sub">Find all the L and l letters</p>
+  </header>
+
+  <div class="level-track" id="levelTrack"></div>
+
+  <div class="stage">
+    <div class="mascot-row">
+      <svg class="mascot" viewBox="0 0 60 60" fill="none">
+        <ellipse cx="30" cy="34" rx="13" ry="15" fill="#22333B"/>
+        <circle cx="30" cy="16" r="9" fill="#22333B"/>
+        <circle cx="26" cy="15" r="2.2" fill="#FBF6EC"/>
+        <circle cx="34" cy="15" r="2.2" fill="#FBF6EC"/>
+        <circle cx="26" cy="15" r="1" fill="#22333B"/>
+        <circle cx="34" cy="15" r="1" fill="#22333B"/>
+        <path d="M16 34 L4 28 M16 38 L3 40 M16 42 L5 50" stroke="#22333B" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M44 34 L56 28 M44 38 L57 40 M44 42 L55 50" stroke="#22333B" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <div class="bubble" id="mascotMsg">
+        Find all the L, l!
+        <span class="twi">Anansi says: hwɛ yie! (look carefully)</span>
+      </div>
+    </div>
+
+    <p class="instruction" id="instructionText">Tap every L and l you can see.</p>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="progress-row">
+      <span id="progressText">Found 0 / 0</span>
+      <span class="stars" id="starsDisplay"></span>
+    </div>
+
+    <div class="complete-overlay" id="completeOverlay">
+      <h2 id="completeTitle">Great job!</h2>
+      <p id="completeSub">You found every L.</p>
+      <button class="btn" id="nextBtn">Next level →</button>
+    </div>
+  </div>
+
+  <div class="restart-row">
+    <button id="restartAll">Start over from level 1</button>
+  </div>
+
+</div>
+
+<script>
+  const levels = [
+    {
+      letters: ['A','L','m','T','l','R','P','L'],
+      cols: 4,
+      instruction: "Tap every L and l you can see.",
+      msg: "Find all the L, l!"
+    },
+    {
+      letters: ['m','T','l','A','P','R','L','d','q','L','A','n'],
+      cols: 4,
+      instruction: "More letters this time. Find every L and l.",
+      msg: "There are more letters now. You can do it!"
+    },
+    {
+      letters: ['I','l','L','i','1','t','L','l','I','L'],
+      cols: 5,
+      instruction: "Careful — I, i, 1 and t look a bit like L. Tap only the L and l.",
+      msg: "Some letters look alike. Look closely!"
+    },
+    {
+      letters: ['l','I','t','L','i','A','1','L','m','l','I','R','L','t','l','P'],
+      cols: 4,
+      instruction: "This is the big one. Find every L and l, ignore the look-alikes.",
+      msg: "You're a real L Detective now!"
+    }
+  ];
+
+  const encourage = [
+    "Woho ye!",
+    "You found it!",
+    "Sharp eyes!",
+    "Nice one!"
+  ];
+
+  let currentLevel = 0;
+  let foundCount = 0;
+  let totalTargets = 0;
+  let misses = 0;
+
+  const grid = document.getElementById('grid');
+  const progressText = document.getElementById('progressText');
+  const starsDisplay = document.getElementById('starsDisplay');
+  const instructionText = document.getElementById('instructionText');
+  const mascotMsg = document.getElementById('mascotMsg');
+  const completeOverlay = document.getElementById('completeOverlay');
+  const completeTitle = document.getElementById('completeTitle');
+  const completeSub = document.getElementById('completeSub');
+  const nextBtn = document.getElementById('nextBtn');
+  const levelTrack = document.getElementById('levelTrack');
+  const restartAll = document.getElementById('restartAll');
+
+  function isTargetLetter(ch){
+    return ch === 'L' || ch === 'l';
+  }
+
+  function buildLevelTrack(){
+    levelTrack.innerHTML = '';
+    levels.forEach((lvl, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'level-dot';
+      dot.textContent = i + 1;
+      if (i === currentLevel) dot.classList.add('active');
+      if (i < currentLevel) dot.classList.add('done');
+      levelTrack.appendChild(dot);
+    });
+  }
+
+  function updateProgress(){
+    progressText.textContent = `Found ${foundCount} / ${totalTargets}`;
+    let starCount = 3;
+    if (misses > 2 && misses <= 5) starCount = 2;
+    if (misses > 5) starCount = 1;
+    let html = '';
+    for (let i = 0; i < 3; i++){
+      html += i < starCount ? '<span class="lit">★</span>' : '<span>★</span>';
+    }
+    starsDisplay.innerHTML = html;
+  }
+
+  function loadLevel(idx){
+    currentLevel = idx;
+    const lvl = levels[idx];
+    foundCount = 0;
+    misses = 0;
+    totalTargets = lvl.letters.filter(isTargetLetter).length;
+
+    instructionText.textContent = lvl.instruction;
+    mascotMsg.innerHTML = lvl.msg + '<span class="twi">Anansi says: hwɛ yie! (look carefully)</span>';
+    completeOverlay.classList.remove('show');
+
+    grid.style.gridTemplateColumns = `repeat(${lvl.cols}, 64px)`;
+    grid.innerHTML = '';
+
+    lvl.letters.forEach((ch) => {
+      const btn = document.createElement('button');
+      btn.className = 'tile';
+      btn.textContent = ch;
+      btn.setAttribute('aria-label', 'letter ' + ch);
+      btn.addEventListener('click', () => handleTileClick(btn, ch));
+      grid.appendChild(btn);
+    });
+
+    updateProgress();
+    buildLevelTrack();
+  }
+
+  function handleTileClick(btn, ch){
+    if (btn.classList.contains('found')) return;
+
+    if (isTargetLetter(ch)){
+      btn.classList.add('found', 'disabled-correct');
+      btn.disabled = true;
+      foundCount++;
+      mascotMsg.innerHTML = encourage[Math.floor(Math.random()*encourage.length)] +
+        '<span class="twi">Anansi says: hwɛ yie! (look carefully)</span>';
+      updateProgress();
+
+      if (foundCount === totalTargets){
+        setTimeout(showComplete, 350);
+      }
+    } else {
+      misses++;
+      btn.classList.add('shake');
+      setTimeout(() => btn.classList.remove('shake'), 350);
+      updateProgress();
+    }
+  }
+
+  function showComplete(){
+    const isLast = currentLevel === levels.length - 1;
+    completeTitle.textContent = isLast ? "You did it all!" : "Great job!";
+    completeSub.textContent = isLast
+      ? "You finished every level. You are a full L Detective."
+      : "You found every L. Ready for the next level?";
+    nextBtn.textContent = isLast ? "Play again from level 1" : "Next level →";
+    completeOverlay.classList.add('show');
+  }
+
+  nextBtn.addEventListener('click', () => {
+    if (currentLevel === levels.length - 1){
+      loadLevel(0);
+    } else {
+      loadLevel(currentLevel + 1);
+    }
+  });
+
+  restartAll.addEventListener('click', () => loadLevel(0));
+
+  loadLevel(0);
+</script>
+</body>
+</html>
